@@ -1,3 +1,4 @@
+<--
 #EXTM3U
 #EXTINF:-1, Radio Italiane 1
 https://gioye.github.io/m3u/radioit1.m3u
@@ -9,3 +10,71 @@ https://gioye.github.io/m3u/radioit3.m3u
 https://gioye.github.io/m3u/radioit4.m3u
 #EXTINF:-1, Radio Italiane 5
 https://gioye.github.io/m3u/radioit5.m3u
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Gioyous Image Generator</title>
+  <script>
+    window.onload = () => {
+      const DEFAULT_TYPE = "jpg";
+      const DEFAULT_WIDTH = 144;
+      const DEFAULT_HEIGHT = 144;
+      const MAX_WIDTH = 256;
+      const MAX_HEIGHT = 256;
+
+      const params = new URLSearchParams(window.location.search);
+      const ft = params.get("ft") || DEFAULT_TYPE;
+      const res = (params.get("res") || `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`).split("x").map(Number);
+      const bin = (params.get("bin") || "").replace(/[^01]/g, "");
+
+      const width = Math.min(parseInt(res[0]) || DEFAULT_WIDTH, MAX_WIDTH);
+      const height = Math.min(parseInt(res[1]) || DEFAULT_HEIGHT, MAX_HEIGHT);
+      const totalPixels = MAX_WIDTH * MAX_HEIGHT;
+
+      const defaultPattern = "10";
+      let fullBin = bin + defaultPattern.repeat(Math.ceil((totalPixels - bin.length) / 2));
+      fullBin = fullBin.slice(0, totalPixels);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      const imageData = ctx.createImageData(width, height);
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const fullIndex = y * MAX_WIDTH + x;
+          const binValue = fullBin[fullIndex] === "1" ? 0 : 255;
+          const pixelIndex = (y * width + x) * 4;
+          imageData.data[pixelIndex] = binValue;
+          imageData.data[pixelIndex + 1] = binValue;
+          imageData.data[pixelIndex + 2] = binValue;
+          imageData.data[pixelIndex + 3] = 255;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      canvas.toBlob((blob) => {
+        const blobURL = URL.createObjectURL(blob);
+
+        // Force a download (for browser behavior compatibility)
+        const a = document.createElement("a");
+        a.href = blobURL;
+        a.download = `generated.${ft}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        // Redirect to blob so image loads if used in <img>
+        window.location.href = blobURL;
+      }, `image/${ft}`);
+    };
+  </script>
+</head>
+<body>
+  <p>Generating and downloading image...</p>
+</body>
+</html>
