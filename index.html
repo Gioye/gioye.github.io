@@ -18,11 +18,14 @@ https://gioye.github.io/m3u/radioit5.m3u
   <script>
     window.onload = () => {
       const DEFAULT_TYPE = "jpg";
+// jpeg??
       const DEFAULT_WIDTH = 144;
       const DEFAULT_HEIGHT = 144;
+// 144p is only used in videos huh?
+// and i hope the max width and height is 1080x1080
       const MAX_WIDTH = 256;
       const MAX_HEIGHT = 256;
-
+// im sworry-
       const params = new URLSearchParams(window.location.search);
       const ft = params.get("ft") || DEFAULT_TYPE;
       const res = (params.get("res") || `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`).split("x").map(Number);
@@ -32,7 +35,7 @@ https://gioye.github.io/m3u/radioit5.m3u
       const height = Math.min(parseInt(res[1]) || DEFAULT_HEIGHT, MAX_HEIGHT);
       const totalPixels = MAX_WIDTH * MAX_HEIGHT;
 
-      const defaultPattern = "10";
+      const defaultPattern = "00";
       let fullBin = bin + defaultPattern.repeat(Math.ceil((totalPixels - bin.length) / 2));
       fullBin = fullBin.slice(0, totalPixels);
 
