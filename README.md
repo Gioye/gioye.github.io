@@ -4,6 +4,7 @@
 Welcome to **GioyousTV**! 🚀
 
 A simple yet powerful media streaming web app that fetches video content from a `stream.json` file, displays it in an elegant and sleek video player, and provides multiple features for smooth streaming.
+well no it is not streaming but uhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
 
 ## Features
 
@@ -22,8 +23,8 @@ To get started with **GioyousTV**:
    git clone https://github.com/yourusername/GioyousTV.git
    ```
 
-2. **Add your `stream.json`**:
-   Create a `stream.json` file with a `videourl` field containing the URL to the video you want to stream.
+2. **Modify `stream.json`**:
+   Modify the `stream.json` file with a `videourl` field containing the URL to the video you want to stream.
 
    Example:
    ```json
@@ -32,8 +33,15 @@ To get started with **GioyousTV**:
    }
    ```
 
-3. **Open `GioyousTV.html`** in your browser:
-   Open `GioyousTV.html` to stream your video!
+   Or:
+   ```json
+   {
+     "videourl": "data:video/mp4;base64,VGVzdA=="
+   }
+   ```
+   
+3. **Open `index.html`** in your browser:
+   Open `index.html` to watch* your video!
 
 ## Query Parameters
 
@@ -61,8 +69,7 @@ GioyousTV is released under the [MIT License](LICENSE).
 
 ## Credits
 
-- Designed by [Your Name](https://github.com/yourusername).
-- Inspired by awesome open-source streaming projects.
+- Designed by [Gioyous](https://github.com/Gioye).
 
 ---
 
