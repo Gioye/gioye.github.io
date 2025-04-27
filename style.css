@@ -10,8 +10,24 @@ body {
   align-items: center;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
+/* Create electrical wires pattern */
+body::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('https://www.transparenttextures.com/patterns/wavy-lines.png'); /* Example noise pattern */
+  z-index: -1;
+  opacity: 0.3;  /* Adjust opacity for subtle effect */
+  pointer-events: none;
+}
+
+/* Content container */
 #content {
   width: 100%;
   max-width: 1280px;
@@ -19,6 +35,7 @@ body {
   text-align: center;
 }
 
+/* TV video container */
 .tv-video {
   width: 100%;
   max-height: 90vh;
@@ -26,8 +43,37 @@ body {
   border-radius: 12px;
   box-shadow: 0 0 20px #00ffccaa, 0 0 40px #00ffcc55;
   background-color: black;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Noise effect on hover */
+.tv-video::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('https://www.transparenttextures.com/patterns/noise.png'); /* Example noise pattern */
+  opacity: 0; /* Hidden by default */
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Show noise effect on hover */
+.tv-video:hover::after {
+  opacity: 0.3;
+}
+
+/* Cool "TV glow" effect when hovering the video */
+.tv-video:hover {
+  border-color: #00ffee;
+  box-shadow: 0 0 30px #00ffeecc, 0 0 60px #00ffee88;
+}
+
+/* Preformatted text */
 pre {
   background: #111;
   color: #0f0;
@@ -40,16 +86,11 @@ pre {
   max-height: 80vh;
 }
 
+/* Error message */
 .error {
   color: #ff4444;
   font-size: 1.5em;
   margin-top: 20px;
-}
-
-/* Cool "TV glow" effect when hovering the video */
-.tv-video:hover {
-  border-color: #00ffee;
-  box-shadow: 0 0 30px #00ffeecc, 0 0 60px #00ffee88;
 }
 
 /* Smooth loading */
