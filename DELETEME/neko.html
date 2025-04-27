@@ -100,6 +100,10 @@ Gioyeimg is an image format with 5 versions based on the bit depth:
 Each bit-depth version supports a different way of representing pixel data. The converter supports all 5 versions for both conversion to Gioyeimg and back to a regular image.
             </pre>
         </div>
+        <div class="gioyeimg">
+    <img id="outputImage" src="" alt="Generated Image">
+</div>
+
 
         <label for="uploadImage">Upload Image:</label>
         <input type="file" id="uploadImage" accept="image/*">
@@ -223,74 +227,76 @@ Each bit-depth version supports a different way of representing pixel data. The 
         }
 
         function convertToImage() {
-            const gioyeInput = document.getElementById('gioyeInput').value.trim();
-            if (!gioyeInput) {
-                alert('Please enter Gioyeimg data!');
-                return;
+    const gioyeInput = document.getElementById('gioyeInput').value.trim();
+    if (!gioyeInput) {
+        alert('Please enter Gioyeimg data!');
+        return;
+    }
+
+    const header = gioyeInput.substring(0, 10);
+    const bitDepth = parseInt(header.substring(0, 2), 10);
+    const width = parseInt(header.substring(2, 6), 10);
+    const height = parseInt(header.substring(6, 10), 10);
+
+    const pixelData = gioyeInput.substring(10).split(',');
+    const imageData = new Uint8ClampedArray(width * height * 4); 
+
+    let index = 0;
+    for (let i = 0; i < pixelData.length; i++) {
+        const pixelValues = pixelData[i].split(' ');
+        if (bitDepth === 1) {
+            const grayscale = pixelValues[0] === '1' ? 255 : 0;
+            imageData[index++] = grayscale;
+            imageData[index++] = grayscale;
+            imageData[index++] = grayscale;
+            imageData[index++] = 255;
+        } else if (bitDepth === 8) {
+            const grayscale = parseInt(pixelValues[0], 10);
+            imageData[index++] = grayscale;
+            imageData[index++] = grayscale;
+            imageData[index++] = grayscale;
+            imageData[index++] = 255;
+        } else if (bitDepth === 16) {
+            const repeatCount = parseInt(pixelValues[0], 10);
+            const grayscale = parseInt(pixelValues[1], 10);
+            for (let j = 0; j < repeatCount; j++) {
+                imageData[index++] = grayscale;
+                imageData[index++] = grayscale;
+                imageData[index++] = grayscale;
+                imageData[index++] = 255;
             }
-
-            const header = gioyeInput.substring(0, 10);
-            const bitDepth = parseInt(header.substring(0, 2), 10);
-            const width = parseInt(header.substring(2, 6), 10);
-            const height = parseInt(header.substring(6, 10), 10);
-
-            const pixelData = gioyeInput.substring(10).split(',');
-            const imageData = new Uint8ClampedArray(width * height * 4); 
-
-            let index = 0;
-            for (let i = 0; i < pixelData.length; i++) {
-                const pixelValues = pixelData[i].split(' ');
-                if (bitDepth === 1) {
-                    const grayscale = pixelValues[0] === '1' ? 255 : 0;
-                    imageData[index++] = grayscale;
-                    imageData[index++] = grayscale;
-                    imageData[index++] = grayscale;
-                    imageData[index++] = 255;
-                } else if (bitDepth === 8) {
-                    const grayscale = parseInt(pixelValues[0], 10);
-                    imageData[index++] = grayscale;
-                    imageData[index++] = grayscale;
-                    imageData[index++] = grayscale;
-                    imageData[index++] = 255;
-                } else if (bitDepth === 16) {
-                    const repeatCount = parseInt(pixelValues[0], 10);
-                    const grayscale = parseInt(pixelValues[1], 10);
-                    for (let j = 0; j < repeatCount; j++) {
-                        imageData[index++] = grayscale;
-                        imageData[index++] = grayscale;
-                        imageData[index++] = grayscale;
-                        imageData[index++] = 255;
-                    }
-                } else if (bitDepth === 24) {
-                    const r = parseInt(pixelValues[0], 10);
-                    const g = parseInt(pixelValues[1], 10);
-                    const b = parseInt(pixelValues[2], 10);
-                    imageData[index++] = r;
-                    imageData[index++] = g;
-                    imageData[index++] = b;
-                    imageData[index++] = 255;
-                } else if (bitDepth === 32) {
-                    const r = parseInt(pixelValues[0], 10);
-                    const g = parseInt(pixelValues[1], 10);
-                    const b = parseInt(pixelValues[2], 10);
-                    const a = parseInt(pixelValues[3], 10);
-                    imageData[index++] = r;
-                    imageData[index++] = g;
-                    imageData[index++] = b;
-                    imageData[index++] = a;
-                }
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            const imgData = new ImageData(imageData, width, height);
-            ctx.putImageData(imgData, 0, 0);
-
-            const imgElement = document.getElementById('convertedImage');
-            imgElement.src = canvas.toDataURL();
+        } else if (bitDepth === 24) {
+            const r = parseInt(pixelValues[0], 10);
+            const g = parseInt(pixelValues[1], 10);
+            const b = parseInt(pixelValues[2], 10);
+            imageData[index++] = r;
+            imageData[index++] = g;
+            imageData[index++] = b;
+            imageData[index++] = 255;
+        } else if (bitDepth === 32) {
+            const r = parseInt(pixelValues[0], 10);
+            const g = parseInt(pixelValues[1], 10);
+            const b = parseInt(pixelValues[2], 10);
+            const a = parseInt(pixelValues[3], 10);
+            imageData[index++] = r;
+            imageData[index++] = g;
+            imageData[index++] = b;
+            imageData[index++] = a;
         }
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    const imgData = new ImageData(imageData, width, height);
+    ctx.putImageData(imgData, 0, 0);
+
+    // Display the converted image in the gioyeimg div
+    const imgElement = document.getElementById('outputImage');
+    imgElement.src = canvas.toDataURL();
+}
+
 
         function toggleDocumentation() {
             const docSection = document.getElementById('documentation');
