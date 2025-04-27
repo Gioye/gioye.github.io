@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GioyousTV</title>
+  <link rel="icon" type="image/png" href="gtv.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="content">
+    <!-- Content will be inserted here -->
+  </div>
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect') === 'true';
+  const blob = params.get('blob') === 'true';
+
+  try {
+    const response = await fetch('stream.json');
+    const streamData = await response.json();
+    const videourl = streamData.videourl;
+
+    if (redirect) {
+      if (blob) {
+        const blobData = await fetch(videourl).then(res => res.blob());
+        const blobUrl = URL.createObjectURL(blobData);
+        window.location.href = blobUrl;
+      } else {
+        window.location.href = videourl;
+      }
+    } else {
+      const content = document.getElementById('content');
+      if (blob) {
+        const readmeResponse = await fetch('README.md');
+        const readmeText = await readmeResponse.text();
+        content.innerHTML = `<pre>${readmeText}</pre>`;
+      } else {
+        const video = document.createElement('video');
+        video.src = videourl;
+        video.controls = true;
+        video.autoplay = true;
+        video.className = 'tv-video';
+        content.appendChild(video);
+      }
+    }
+  } catch (err) {
+    console.error('Error:', err);
+    document.getElementById('content').innerHTML = '<p class="error">An error occurred. Check the console.</p>';
+  }
+})();
+</script>
+</body>
+</html>
