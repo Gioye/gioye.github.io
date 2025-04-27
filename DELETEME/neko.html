@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gioyeimg Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #181818;
+            color: #e0e0e0;
+            margin: 20px;
+            padding: 0;
+        }
+        h1, h2 {
+            color: #f0f0f0;
+        }
+        input[type="file"], button, textarea, select {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        input[type="file"] {
+            padding: 5px;
+        }
+        canvas {
+            display: none;
+        }
+        #gioyeOutput {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            background-color: #222;
+            border-radius: 8px;
+        }
+        .doc-section {
+            background-color: #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+        .doc-section pre {
+            font-size: 14px;
+            color: #ccc;
+            background-color: #333;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .toggle-doc-btn {
+            background-color: #555;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gioyeimg (Gioye Image) Converter</h1>
+
+        <button class="toggle-doc-btn" onclick="toggleDocumentation()">Show Documentation</button>
+
+        <div class="doc-section" id="documentation">
+            <h2>Gioyeimg Format Documentation</h2>
+            <pre>
+Gioyeimg is an image format with 5 versions based on the bit depth:
+
+1. 1-bit (Early Bitmap):
+   - 1 BIT per pixel, 2 colors.
+   - 1 byte = 8 pixels (very compact).
+   - Header format: 01YYYYZZZZ (YYYY = width, ZZZZ = height).
+
+2. 8-bit (Bitmap):
+   - 1 byte per pixel, 256 colors.
+   - Header format: 08YYYYZZZZ.
+
+3. 16-bit (Compressed Bitmap):
+   - 2 bytes per pixel, 256 colors.
+   - First byte indicates how many times the pixel is repeated.
+   - Header format: 16YYYYZZZZ.
+
+4. 24-bit (True Color):
+   - 3 bytes per pixel (RGB), no repetition byte.
+   - Header format: 24YYYYZZZZ.
+
+5. 32-bit (Compressed True Color):
+   - 4 bytes per pixel (RGBA), with a repetition byte.
+   - Header format: 32YYYYZZZZ.
+
+Each bit-depth version supports a different way of representing pixel data. The converter supports all 5 versions for both conversion to Gioyeimg and back to a regular image.
+            </pre>
+        </div>
+
+        <label for="uploadImage">Upload Image:</label>
+        <input type="file" id="uploadImage" accept="image/*">
+
+        <label for="bitDepth">Select Bit Depth:</label>
+        <select id="bitDepth">
+            <option value="1">1-bit</option>
+            <option value="8" selected>8-bit</option>
+            <option value="16">16-bit</option>
+            <option value="24">24-bit</option>
+            <option value="32">32-bit</option>
+        </select>
+
+        <canvas id="canvas"></canvas>
+
+        <h2>Gioyeimg (Output/Format)</h2>
+        <textarea id="gioyeOutput" rows="15" cols="100" placeholder="Gioyeimg data will appear here"></textarea>
+
+        <button id="convertToGioyeimg">Convert to Gioyeimg</button>
+
+        <h2>Input Gioyeimg Data (for conversion back to image):</h2>
+        <textarea id="gioyeInput" rows="10" cols="100" placeholder="Enter Gioyeimg format data"></textarea>
+
+        <button id="convertToImage">Convert to Image</button>
+
+        <h2>Converted Image:</h2>
+        <img id="convertedImage" style="max-width: 100%;">
+
+    </div>
+
+    <script>
+        document.getElementById('uploadImage').addEventListener('change', handleImageUpload);
+        document.getElementById('convertToGioyeimg').addEventListener('click', convertToGioyeimg);
+        document.getElementById('convertToImage').addEventListener('click', convertToImage);
+
+        let imageData = null;
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.getElementById('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function convertToGioyeimg() {
+            if (!imageData) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            const width = imageData.width;
+            const height = imageData.height;
+            const pixelData = processImageToGioye(imageData);
+
+            const bitDepth = parseInt(document.getElementById('bitDepth').value);
+            const header = `${String(bitDepth).padStart(2, '0')}${String(width).padStart(4, '0')}${String(height).padStart(4, '0')}`;
+
+            document.getElementById('gioyeOutput').value = header + pixelData;
+        }
+
+        function processImageToGioye(imageData) {
+            const bitDepth = parseInt(document.getElementById('bitDepth').value);
+            let pixelData = '';
+
+            if (bitDepth === 1) {
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const grayscale = Math.round((r + g + b) / 3);
+                    pixelData += grayscale > 127 ? '1,' : '0,';
+                }
+            } else if (bitDepth === 8) {
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const grayscale = Math.round((r + g + b) / 3);
+                    pixelData += `${grayscale},`;
+                }
+            } else if (bitDepth === 16) {
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const grayscale = Math.round((r + g + b) / 3);
+                    const repeatCount = 1;
+                    pixelData += `${repeatCount} ${grayscale},`;
+                }
+            } else if (bitDepth === 24) {
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    pixelData += `${r} ${g} ${b},`;
+                }
+            } else if (bitDepth === 32) {
+                for (let i = 0; i < imageData.data.length; i += 4) {
+                    const r = imageData.data[i];
+                    const g = imageData.data[i + 1];
+                    const b = imageData.data[i + 2];
+                    const a = imageData.data[i + 3];
+                    pixelData += `${r} ${g} ${b} ${a},`;
+                }
+            }
+
+            return pixelData.slice(0, -1);
+        }
+
+        function convertToImage() {
+            const gioyeInput = document.getElementById('gioyeInput').value.trim();
+            if (!gioyeInput) {
+                alert('Please enter Gioyeimg data!');
+                return;
+            }
+
+            const header = gioyeInput.substring(0, 10);
+            const bitDepth = parseInt(header.substring(0, 2), 10);
+            const width = parseInt(header.substring(2, 6), 10);
+            const height = parseInt(header.substring(6, 10), 10);
+
+            const pixelData = gioyeInput.substring(10).split(',');
+            const imageData = new Uint8ClampedArray(width * height * 4); 
+
+            let index = 0;
+            for (let i = 0; i < pixelData.length; i++) {
+                const pixelValues = pixelData[i].split(' ');
+                if (bitDepth === 1) {
+                    const grayscale = pixelValues[0] === '1' ? 255 : 0;
+                    imageData[index++] = grayscale;
+                    imageData[index++] = grayscale;
+                    imageData[index++] = grayscale;
+                    imageData[index++] = 255;
+                } else if (bitDepth === 8) {
+                    const grayscale = parseInt(pixelValues[0], 10);
+                    imageData[index++] = grayscale;
+                    imageData[index++] = grayscale;
+                    imageData[index++] = grayscale;
+                    imageData[index++] = 255;
+                } else if (bitDepth === 16) {
+                    const repeatCount = parseInt(pixelValues[0], 10);
+                    const grayscale = parseInt(pixelValues[1], 10);
+                    for (let j = 0; j < repeatCount; j++) {
+                        imageData[index++] = grayscale;
+                        imageData[index++] = grayscale;
+                        imageData[index++] = grayscale;
+                        imageData[index++] = 255;
+                    }
+                } else if (bitDepth === 24) {
+                    const r = parseInt(pixelValues[0], 10);
+                    const g = parseInt(pixelValues[1], 10);
+                    const b = parseInt(pixelValues[2], 10);
+                    imageData[index++] = r;
+                    imageData[index++] = g;
+                    imageData[index++] = b;
+                    imageData[index++] = 255;
+                } else if (bitDepth === 32) {
+                    const r = parseInt(pixelValues[0], 10);
+                    const g = parseInt(pixelValues[1], 10);
+                    const b = parseInt(pixelValues[2], 10);
+                    const a = parseInt(pixelValues[3], 10);
+                    imageData[index++] = r;
+                    imageData[index++] = g;
+                    imageData[index++] = b;
+                    imageData[index++] = a;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            const imgData = new ImageData(imageData, width, height);
+            ctx.putImageData(imgData, 0, 0);
+
+            const imgElement = document.getElementById('convertedImage');
+            imgElement.src = canvas.toDataURL();
+        }
+
+        function toggleDocumentation() {
+            const docSection = document.getElementById('documentation');
+            docSection.style.display = docSection.style.display === 'none' ? 'block' : 'none';
+        }
+    </script>
+</body>
+</html>
