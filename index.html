@@ -16,38 +16,52 @@
   const redirect = params.get('redirect') === 'true';
   const blob = params.get('blob') === 'true';
 
-  try {
-    const response = await fetch('stream.json');
-    const streamData = await response.json();
-    const videourl = streamData.videourl;
+  let currentVideoUrl = null; // Store the current video URL
+  let videoElement = null; // Store the current video element
 
-    if (redirect) {
-      if (blob) {
-        const blobData = await fetch(videourl).then(res => res.blob());
-        const blobUrl = URL.createObjectURL(blobData);
-        window.location.href = blobUrl;
-      } else {
-        window.location.href = videourl;
+  const fetchAndUpdateVideo = async () => {
+    try {
+      const response = await fetch('stream.json');
+      const streamData = await response.json();
+      const videourl = streamData.videourl;
+
+      // Check if the video URL has changed
+      if (videourl !== currentVideoUrl) {
+        currentVideoUrl = videourl;
+
+        // If a video element exists, remove it and add the new one
+        if (videoElement) {
+          videoElement.remove();
+        }
+
+        // Create a new video element
+        videoElement = document.createElement('video');
+        videoElement.src = videourl;
+        videoElement.autoplay = true;
+        videoElement.loop = true;  // Ensures the video loops automatically
+        videoElement.controls = true;
+        videoElement.className = 'tv-video';
+        document.getElementById('content').appendChild(videoElement);
+
+        // Make the video unpauseable by continuously checking its state
+        videoElement.addEventListener('play', () => {
+          setInterval(() => {
+            if (videoElement.paused) {
+              videoElement.play();
+            }
+          }, 100);
+        });
       }
-    } else {
-      const content = document.getElementById('content');
-      if (blob) {
-        const readmeResponse = await fetch('README.md');
-        const readmeText = await readmeResponse.text();
-        content.innerHTML = `<pre>${readmeText}</pre>`;
-      } else {
-        const video = document.createElement('video');
-        video.src = videourl;
-        video.controls = true;
-        video.autoplay = true;
-        video.className = 'tv-video';
-        content.appendChild(video);
-      }
+    } catch (err) {
+      console.error('Error:', err);
     }
-  } catch (err) {
-    console.error('Error:', err);
-    document.getElementById('content').innerHTML = '<p class="error">An error occurred. Check the console.</p>';
-  }
+  };
+
+  // Initial video load
+  await fetchAndUpdateVideo();
+
+  // Set an interval to periodically check for a new video
+  setInterval(fetchAndUpdateVideo, 5000); // Check every 5 seconds
 })();
 </script>
 </body>
