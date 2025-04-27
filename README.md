@@ -22,8 +22,9 @@ To get started with **GioyousTV**:
    ```bash
    git clone https://github.com/yourusername/GioyousTV.git
    ```
-
-2. **Modify `stream.json`**:
+2. **If there is a DELETEME folder, DELETE IT IMMEDIATELY.**
+3. 
+4. **Modify `stream.json`**:
    Modify the `stream.json` file with a `videourl` field containing the URL to the video you want to stream.
 
    Example:
