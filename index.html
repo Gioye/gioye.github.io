@@ -2,136 +2,121 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>GioyousIPTV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Captcha Verification</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 20px;
-      background-color: #f9f9f9;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      color: #333;
+    }
+
+    .captcha-container {
+      background: white;
+      padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
     }
-    h1 {
-      color: #2c3e50;
+
+    img {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 20px;
     }
-    select,
-    button {
+
+    input[type="text"] {
       padding: 10px;
-      margin-top: 10px;
+      width: 80%;
+      margin-bottom: 20px;
       font-size: 16px;
     }
-    #output {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #eaf2f8;
-      border-left: 4px solid #3498db;
-      display: none;
-      word-wrap: break-word;
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #00c6ff;
+      border: none;
+      border-radius: 5px;
+      color: white;
     }
-    a {
-      color: #2980b9;
+
+    .error {
+      color: red;
       font-weight: bold;
-      word-break: break-all;
+      margin-top: 15px;
     }
   </style>
 </head>
 <body>
-  <h1>GioyousIPTV</h1>
-  <p>Select a country or a single channel to download its IPTV playlist:</p>
-  <select id="countrySelect">
-    <option value="">-- Choose a country or channel --</option>
-    <!-- Countries -->
-    <option value="us" data-type="country">USA</option>
-    <option value="uk" data-type="country">UK</option>
-    <option value="it" data-type="country">Italy</option>
-    <option value="ch" data-type="country">Switzerland</option>
-    <!-- Single channels -->
-    <option value="boing" data-type="channel">Boing Spain</option>
-    <option value="cuatro" data-type="channel">Cuatro Spain</option>
-    <option value="telecinco" data-type="channel">Telecinco Spain</option>
-  </select>
-  <button onclick="handleSelection()">Get IPTV File</button>
-
-  <div id="output">
-    <!-- For countries -->
-    <p id="downloadSection"><strong>Download:</strong> <a id="m3uLink" href="#" download>Download M3U Playlist</a></p>
-    <!-- For single channels -->
-    <p id="plainLinkSection" style="display: none;">
-      <strong>Stream URL:</strong> <span id="plainLink"></span>
-    </p>
-
-    <!-- Usage instructions -->
-    <p id="usageText">
-      To watch this IPTV File, download it and open it with a media player like VLC, Kodi, or any IPTV-compatible app. If you can't download, Try opening it using its URL.
-    </p>
-
-    <p><em>Author: <span id="authorCredit"></span></em></p>
+  <div class="captcha-container" id="captcha-box">
+    <h2>Verify You're Human</h2>
+    <img id="captcha-img" src="" alt="Captcha" />
+    <form id="captcha-form">
+      <input type="text" id="captcha-input" placeholder="Enter the number..." required />
+      <br />
+      <button type="submit">Submit</button>
+    </form>
+    <div class="error" id="error-msg"></div>
   </div>
 
   <script>
-    const links = {
-      us: "https://raw.githubusercontent.com/matte-oss/iptv-ungeoblocked/main/countries/US.m3u",
-      uk: "https://raw.githubusercontent.com/matte-oss/iptv-ungeoblocked/refs/heads/main/countries/UK.m3u",
-      it: "https://raw.githubusercontent.com/Gioye/fixtv/refs/heads/main/iptvita.m3u",
-      ch: "https://raw.githubusercontent.com/matte-oss/iptv-ungeoblocked/refs/heads/main/countries/CH.m3u",
-      boing: "http://185.189.225.150:85/boing/index.m3u8",
-      cuatro: "http://185.189.225.150:85/CuatroHD/index.m3u8",
-      telecinco: "http://185.189.225.150:85/TeleCincoHD/index.m3u8"
-    };
+    const query = new URLSearchParams(window.location.search);
+    const encodedTo = query.get("to");
 
-    const authors = {
-      us: `<a href="https://github.com/matte-oss" target="_blank">matte-oss (GitHub)</a>`,
-      uk: `<a href="https://github.com/matte-oss" target="_blank">matte-oss (GitHub)</a>`,
-      it: `<a href="https://github.com/Tundrak" target="_blank">Tundrak (GitHub)</a>`,
-      ch: `<a href="https://github.com/matte-oss" target="_blank">matte-oss (GitHub)</a>`,
-      boing: `None`,
-      cuatro: `None`,
-      telecinco: `None`
-    };
-
-    function handleSelection() {
-      const select = document.getElementById("countrySelect");
-      const selected = select.value;
-      const selectedOption = select.options[select.selectedIndex];
-      const type = selectedOption.getAttribute("data-type");
-      const output = document.getElementById("output");
-      const downloadSection = document.getElementById("downloadSection");
-      const plainLinkSection = document.getElementById("plainLinkSection");
-      const link = document.getElementById("m3uLink");
-      const plainLink = document.getElementById("plainLink");
-      const authorCredit = document.getElementById("authorCredit");
-      const usageText = document.getElementById("usageText");
-
-      if (!selected || !links[selected]) {
-        output.style.display = "none";
-        alert("This IPTV file is not available yet.");
-        return;
-      }
-
-      authorCredit.innerHTML = authors[selected] || "None";
-
-      if (type === "country") {
-        usageText.textContent =
-          "To watch this IPTV File, download it and open it with a media player like VLC, Kodi, or any IPTV-compatible app. If you can't download, Try opening it via URL.";
-        downloadSection.style.display = "block";
-        plainLinkSection.style.display = "none";
-
-        link.href = links[selected];
-        link.innerText = `Download ${selected.toUpperCase()} M3U Playlist`;
-        link.setAttribute("download", `${selected.toUpperCase()}.m3u`);
-      } else {
-        usageText.textContent =
-          "To watch this TV channel, open this link via VLC Media Player.";
-        downloadSection.style.display = "none";
-        plainLinkSection.style.display = "block";
-
-        plainLink.innerHTML = `<a href="${links[selected]}" target="_blank" rel="noopener noreferrer">${links[selected]}</a>`;
-      }
-
-      output.style.display = "block";
+    if (!encodedTo) {
+      document.body.innerHTML = "<h2 style='color:white;'>Missing 'to' parameter.</h2>";
+      throw new Error("Missing 'to' parameter");
     }
+
+    // Decode the base64 URL
+    let decodedUrl;
+    try {
+      decodedUrl = atob(encodedTo);
+    } catch (e) {
+      document.body.innerHTML = "<h2 style='color:white;'>Invalid 'to' parameter.</h2>";
+      throw new Error("Invalid base64 in 'to' parameter");
+    }
+
+    // Remove ?to=... from URL using history API
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Load captcha
+    let correctAnswer = "";
+    fetch("https://wowcaptcha.netlify.app/api/")
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("captcha-img").src = data.captcha;
+        correctAnswer = data.correct;
+      })
+      .catch(() => {
+        document.getElementById("captcha-box").innerHTML = "<p>Failed to load captcha. Try again later.</p>";
+      });
+
+    // Handle form submission
+    document.getElementById("captcha-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const userAnswer = document.getElementById("captcha-input").value.trim();
+      const errorBox = document.getElementById("error-msg");
+
+      if (userAnswer === correctAnswer) {
+        // Determine if URL has query parameters already
+        const hasParams = decodedUrl.includes("?");
+        const separator = hasParams ? "&" : "?";
+        window.location.href = `${decodedUrl}${separator}captchasolved=true`;
+      } else {
+        errorBox.textContent = "Nope!";
+      }
+    });
   </script>
 </body>
 </html>
