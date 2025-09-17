@@ -1,82 +1,137 @@
-#EXTM3U
-#EXTINF:-1, Radio Italiane 1
-https://gioye.github.io/m3u/radioit1.m3u
-#EXTINF:-1, Radio Italiane 2
-https://gioye.github.io/m3u/radioit2.m3u
-#EXTINF:-1, Radio Italiane 3
-https://gioye.github.io/m3u/radioit3.m3u
-#EXTINF:-1, Radio Italiane 4
-https://gioye.github.io/m3u/radioit4.m3u
-#EXTINF:-1, Radio Italiane 5
-https://gioye.github.io/m3u/radioit5.m3u
-#EXTINF:-1, html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Gioyous Image Generator</title>
-  <script>
-    window.onload = () => {
-      const DEFAULT_TYPE = "jpg";
-// jpeg??
-      const DEFAULT_WIDTH = 144;
-      const DEFAULT_HEIGHT = 144;
-// 144p is only used in videos huh?
-// and i hope the max width and height is 1080x1080
-      const MAX_WIDTH = 256;
-      const MAX_HEIGHT = 256;
-// im sworry-
-      const params = new URLSearchParams(window.location.search);
-      const ft = params.get("ft") || DEFAULT_TYPE;
-      const res = (params.get("res") || `${DEFAULT_WIDTH}x${DEFAULT_HEIGHT}`).split("x").map(Number);
-      const bin = (params.get("bin") || "").replace(/[^01]/g, "");
-
-      const width = Math.min(parseInt(res[0]) || DEFAULT_WIDTH, MAX_WIDTH);
-      const height = Math.min(parseInt(res[1]) || DEFAULT_HEIGHT, MAX_HEIGHT);
-      const totalPixels = MAX_WIDTH * MAX_HEIGHT;
-
-      const defaultPattern = "00";
-      let fullBin = bin + defaultPattern.repeat(Math.ceil((totalPixels - bin.length) / 2));
-      fullBin = fullBin.slice(0, totalPixels);
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      const imageData = ctx.createImageData(width, height);
-
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const fullIndex = y * MAX_WIDTH + x;
-          const binValue = fullBin[fullIndex] === "1" ? 0 : 255;
-          const pixelIndex = (y * width + x) * 4;
-          imageData.data[pixelIndex] = binValue;
-          imageData.data[pixelIndex + 1] = binValue;
-          imageData.data[pixelIndex + 2] = binValue;
-          imageData.data[pixelIndex + 3] = 255;
-        }
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-
-      canvas.toBlob((blob) => {
-        const blobURL = URL.createObjectURL(blob);
-
-        // Force a download (for browser behavior compatibility)
-        const a = document.createElement("a");
-        a.href = blobURL;
-        a.download = `generated.${ft}`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        // Redirect to blob so image loads if used in <img>
-        window.location.href = blobURL;
-      }, `image/${ft}`);
-    };
-  </script>
+  <meta charset="UTF-8" />
+  <title>GioyousIPTV</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    select,
+    button {
+      padding: 10px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #eaf2f8;
+      border-left: 4px solid #3498db;
+      display: none;
+      word-wrap: break-word;
+    }
+    a {
+      color: #2980b9;
+      font-weight: bold;
+      word-break: break-all;
+    }
+  </style>
 </head>
 <body>
-  <p>Generating and downloading image...</p>
+  <h1>GioyousIPTV</h1>
+  <p>Select a country or a single channel to download its IPTV playlist:</p>
+  <select id="countrySelect">
+    <option value="">-- Choose a country or channel --</option>
+    <!-- Countries -->
+    <option value="us" data-type="country">USA</option>
+    <option value="uk" data-type="country">UK</option>
+    <option value="it" data-type="country">Italy</option>
+    <option value="ch" data-type="country">Switzerland</option>
+    <!-- Single channels -->
+    <option value="boing" data-type="channel">Boing Spain</option>
+    <option value="cuatro" data-type="channel">Cuatro Spain</option>
+    <option value="telecinco" data-type="channel">Telecinco Spain</option>
+  </select>
+  <button onclick="handleSelection()">Get IPTV File</button>
+
+  <div id="output">
+    <!-- For countries -->
+    <p id="downloadSection"><strong>Download:</strong> <a id="m3uLink" href="#" download>Download M3U Playlist</a></p>
+    <!-- For single channels -->
+    <p id="plainLinkSection" style="display: none;">
+      <strong>Stream URL:</strong> <span id="plainLink"></span>
+    </p>
+
+    <!-- Usage instructions -->
+    <p id="usageText">
+      To watch this IPTV File, download it and open it with a media player like VLC, Kodi, or any IPTV-compatible app. If you can't download, Try opening it using its URL.
+    </p>
+
+    <p><em>Author: <span id="authorCredit"></span></em></p>
+  </div>
+
+  <script>
+    const links = {
+      us: "https://raw.githubusercontent.com/matte-oss/iptv-ungeoblocked/main/countries/US.m3u",
+      uk: "https://raw.githubusercontent.com/matte-oss/iptv-ungeoblocked/refs/heads/main/countries/UK.m3u",
+      it: "https://raw.githubusercontent.com/Gioye/fixtv/refs/heads/main/iptvita.m3u",
+      ch: "https://raw.githubusercontent.com/matte-oss/iptv-ungeoblocked/refs/heads/main/countries/CH.m3u",
+      boing: "http://185.189.225.150:85/boing/index.m3u8",
+      cuatro: "http://185.189.225.150:85/CuatroHD/index.m3u8",
+      telecinco: "http://185.189.225.150:85/TeleCincoHD/index.m3u8"
+    };
+
+    const authors = {
+      us: `<a href="https://github.com/matte-oss" target="_blank">matte-oss (GitHub)</a>`,
+      uk: `<a href="https://github.com/matte-oss" target="_blank">matte-oss (GitHub)</a>`,
+      it: `<a href="https://github.com/Tundrak" target="_blank">Tundrak (GitHub)</a>`,
+      ch: `<a href="https://github.com/matte-oss" target="_blank">matte-oss (GitHub)</a>`,
+      boing: `None`,
+      cuatro: `None`,
+      telecinco: `None`
+    };
+
+    function handleSelection() {
+      const select = document.getElementById("countrySelect");
+      const selected = select.value;
+      const selectedOption = select.options[select.selectedIndex];
+      const type = selectedOption.getAttribute("data-type");
+      const output = document.getElementById("output");
+      const downloadSection = document.getElementById("downloadSection");
+      const plainLinkSection = document.getElementById("plainLinkSection");
+      const link = document.getElementById("m3uLink");
+      const plainLink = document.getElementById("plainLink");
+      const authorCredit = document.getElementById("authorCredit");
+      const usageText = document.getElementById("usageText");
+
+      if (!selected || !links[selected]) {
+        output.style.display = "none";
+        alert("This IPTV file is not available yet.");
+        return;
+      }
+
+      authorCredit.innerHTML = authors[selected] || "None";
+
+      if (type === "country") {
+        usageText.textContent =
+          "To watch this IPTV File, download it and open it with a media player like VLC, Kodi, or any IPTV-compatible app. If you can't download, Try opening it via URL.";
+        downloadSection.style.display = "block";
+        plainLinkSection.style.display = "none";
+
+        link.href = links[selected];
+        link.innerText = `Download ${selected.toUpperCase()} M3U Playlist`;
+        link.setAttribute("download", `${selected.toUpperCase()}.m3u`);
+      } else {
+        usageText.textContent =
+          "To watch this TV channel, open this link via VLC Media Player.";
+        downloadSection.style.display = "none";
+        plainLinkSection.style.display = "block";
+
+        plainLink.innerHTML = `<a href="${links[selected]}" target="_blank" rel="noopener noreferrer">${links[selected]}</a>`;
+      }
+
+      output.style.display = "block";
+    }
+  </script>
 </body>
 </html>
