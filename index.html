@@ -8,7 +8,8 @@
   <meta property="og:image" content="" id="og-image">
   <style>
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 40px; }
-    img { max-height: 80px; margin-bottom: 20px; }
+    img { height: 150px; width: auto; margin-bottom: 20px; object-fit: contain; }
+    #logo { display: flex; justify-content: center; align-items: center; }
   </style>
 </head>
 <body>
@@ -35,7 +36,7 @@ async function detectISP() {
     if (domain) {
       const microRes = await fetch(`https://api.microlink.io/?url=https://${domain}`);
       const micro = await microRes.json();
-      logoUrl = micro.data?.logo?.url || "";
+      logoUrl = micro.data?.logo?.url || micro.data?.image?.url || "";
     }
 
     if (logoUrl) {
@@ -56,4 +57,3 @@ detectISP();
 
 </body>
 </html>
-
