@@ -10,12 +10,22 @@
     body { font-family: Arial, sans-serif; text-align: center; margin-top: 40px; }
     img { height: 150px; width: auto; margin-bottom: 20px; object-fit: contain; }
     #logo { display: flex; justify-content: center; align-items: center; }
+    details { border: 1px solid #ccc; padding: 10px; margin-top: 20px; text-align: left; cursor: pointer; }
+    details[open] { background-color: #f9f9f9; }
+    .details-content { display: none; }
+    details[open] .details-content { display: block; }
   </style>
 </head>
 <body>
   <h1>Your ISP Is...</h1>
   <div id="logo">(Loading logo...)</div>
-  <h2 id="isp">Loading...</h2>
+  <h1 id="isp">Loading...</h1>
+
+  <details>
+    <div class="details-content" id="more-info">
+      Loading more info...
+    </div>
+  </details>
 
 <script>
 async function detectISP() {
@@ -46,9 +56,23 @@ async function detectISP() {
       document.getElementById('logo').innerText = '(No logo found)';
     }
 
+    // Populate more info
+    document.getElementById('more-info').innerHTML = `
+      <p><strong>ASN:</strong> ${who.connection?.asn || 'N/A'}</p>
+      <p><strong>Organization:</strong> ${who.connection?.org || 'N/A'}</p>
+      <p><strong>Domain:</strong> ${who.connection?.domain || 'N/A'}</p>
+      <p><strong>IP:</strong> ${who.ip}</p>
+      <p><strong>Country:</strong> ${who.country} (${who.country_code})</p>
+      <p><strong>Region:</strong> ${who.region}</p>
+      <p><strong>City:</strong> ${who.city}</p>
+      <p><strong>Latitude/Longitude:</strong> ${who.latitude}, ${who.longitude}</p>
+      <p><strong>Timezone:</strong> ${who.timezone?.id} (${who.timezone?.abbr})</p>
+    `;
+
   } catch (e) {
     document.getElementById('isp').innerText = 'Error';
     document.getElementById('logo').innerText = '(Error loading logo)';
+    document.getElementById('more-info').innerText = 'Error loading details';
   }
 }
 
@@ -57,3 +81,4 @@ detectISP();
 
 </body>
 </html>
+
